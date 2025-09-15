@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Realtime Humidity Chart</title>
+
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{ --bg:#f4f8ff; --card:#ffffff; --accent:rgb(3,169,244); }
+    html,body{height:100%; margin:0; font-family:Inter, system-ui, Arial, sans-serif; background:var(--bg);}
+    .wrap{max-width:980px; margin:28px auto; padding:20px;}
+    .card{background:var(--card); border-radius:10px; padding:18px; box-shadow:0 8px 28px rgba(15,20,40,0.06);}
+    h2{margin:0 0 12px 0; font-weight:600; color:#0f1724;}
+    .meta{display:flex; gap:18px; align-items:center; margin-bottom:12px; color:#334155;}
+    .meta .val{font-weight:700; color:var(--accent); font-size:1.15rem;}
+    canvas{width:100% !important; height:420px !important;}
+    .small{font-size:0.9rem; color:#64748b;}
+    .badge{display:inline-block; padding:6px 10px; background:#eef7ff; color:var(--accent); border-radius:8px; font-weight:600;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2>Realtime Humidity Monitoring</h2>
+      <div class="meta">
+        <div>Latest humidity: <span id="latestHum" class="val">-</span> %</div>
+        <div class="small">Points shown: <span id="maxPoints">30</span></div>
+        <div style="margin-left:auto"><span id="status" class="badge">No socket (sim)</span></div>
+      </div>
+
+      <canvas id="humChart" aria-label="Realtime humidity chart"></canvas>
+      <p class="small" style="margin-top:10px">Hint: Chart listens to Socket.IO event <code>hum_update</code> with payload <code>{ hum: number, time: number }</code>.</p>
+    </div>
+  </div>
+
+  <!-- Optional: Socket.IO client library will be loaded dynamically if available on same host -->
+  <script>
+    // ====== Chart setup ======
+    const MAX_POINTS = 30;
+    document.getElementById('maxPoints').textContent = MAX_POINTS;
+
+    const ctx = document.getElementById('humChart').getContext('2d');
+    const humChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Humidity (%)',
+          data: [],
+          borderColor: 'rgba(3,169,244,1)',
+          backgroundColor: 'rgba(3,169,244,0.12)',
+          fill: true,
+          tension: 0.25,
+          pointRadius: 2,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: {
+          x: { display: true, title: { display: true, text: 'Time' } },
+          y: { min: 0, max: 100, title: { display: true, text: 'Humidity (%)' } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    function pushData(label, value) {
+      if (humChart.data.labels.length >= MAX_POINTS) {
+        humChart.data.labels.shift();
+        humChart.data.datasets[0].data.shift();
+      }
+      humChart.data.labels.push(label);
+      humChart.data.datasets[0].data.push(value);
+      humChart.update();
+    }
+
+    function handleIncoming(humValue, ts=Date.now()) {
+      const hum = Number(humValue);
+      if (isNaN(hum)) return;
+      document.getElementById('latestHum').textContent = hum.toFixed(1);
+      pushData(new Date(ts).toLocaleTimeString(), hum);
+    }
+
+    // ====== Socket.IO integration (if available) ======
+    // Try to dynamically load /socket.io/socket.io.js from same host.
+    // If not present or connection fails, fallback to simulation.
+    (function trySocketIO() {
+      const statusEl = document.getElementById('status');
+
+      function startSimulation() {
+        statusEl.textContent = 'Simulation running';
+        statusEl.style.background = '#fff8ed';
+        statusEl.style.color = '#d97706';
+        // simulate random data every 2s
+        setInterval(() => {
+          const rnd = +(30 + Math.random() * 50).toFixed(1);
+          handleIncoming(rnd);
+        }, 2000);
+      }
+
+      // load socket.io client script
+      const s = document.createElement('script');
+      s.src = '/socket.io/socket.io.js';
+      s.onload = () => {
+        try {
+          const socket = io(); // connect to same host where file is served
+          statusEl.textContent = 'Connected (socket)';
+          statusEl.style.background = '#e8f9ff';
+          statusEl.style.color = '#0369a1';
+
+          socket.on('connect', () => {
+            console.log('Socket.IO connected', socket.id);
+            statusEl.textContent = 'Connected (socket)';
+          });
+
+          socket.on('disconnect', () => {
+            console.log('Socket disconnected');
+            statusEl.textContent = 'Socket disconnected';
+            // fallback to simulation on disconnect
+            startSimulation();
+          });
+
+          // expect server to emit 'hum_update' with { hum, time }
+          socket.on('hum_update', (msg) => {
+            // either {hum, time} or direct number
+            if (msg && typeof msg === 'object' && ('hum' in msg)) {
+              handleIncoming(msg.hum, msg.time || Date.now());
+            } else if (typeof msg === 'number' || (!isNaN(Number(msg)))) {
+              handleIncoming(Number(msg));
+            }
+          });
+
+          // request last value optionally
+          socket.emit('request_last'); // server can handle if implemented
+
+          // if no incoming messages within X seconds, fallback
+          let lastRecv = Date.now();
+          setInterval(() => {
+            if (Date.now() - lastRecv > 10000 && humChart.data.labels.length === 0) {
+              // no data received shortly after connect -> start simulation
+              startSimulation();
+            }
+          }, 3000);
+
+          // update timestamp on every received message
+          socket.on('hum_update', () => { lastRecv = Date.now(); });
+        } catch (err) {
+          console.warn('Socket.IO load ok but connect failed:', err);
+          startSimulation();
+        }
+      };
+      s.onerror = () => {
+        console.warn('Socket.IO client not found on server, running simulation.');
+        startSimulation();
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
