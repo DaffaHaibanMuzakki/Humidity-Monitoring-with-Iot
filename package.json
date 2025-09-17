@@ -7,5 +7,8 @@
     "mongoose": "^8.18.1",
     "mqtt": "^5.14.1",
     "socket.io": "^4.8.1"
+  },
+  "scripts": {
+    "start": "node app.js"
   }
 }
