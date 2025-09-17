@@ -68,9 +68,11 @@ app.get("/", checkAuth, async (req, res) => {
 
   
   if (typeof req.session.alarmValue == 'undefined') {
-    alarmValue = parseInt(humidity_data.humidity)
+    alarmValue = parseInt(humidity_data.humidity) 
   }else{
-    alarmValue = req.session.alarmValue > 100 ? undefined : req.session.alarmValue
+    alarmValue = req.session.alarmValue > 100 ? undefined : req.session.alarmValue ;
+    
+    io.emit("alarm", alarmValue);
   }
 
   delete req.session.alarmValue;
@@ -114,6 +116,7 @@ app.post("/set_alarm", async(req, res) => {
     await humid.updateOne({humidity : alarmValue});
 
     
+
   } else {
     return res.status(400).send("Input harus berupa angka");
   }
@@ -153,7 +156,7 @@ client.on("message", (topic, message) => {
   }
 
 
-  io.emit("")
+  
   
   io.emit("mqtt_data", {data, alarmValue} );
 

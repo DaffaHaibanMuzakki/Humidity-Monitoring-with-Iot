@@ -64,7 +64,7 @@
             </div>
             <div class="d-flex justify-content-around mt-3">
               <p class="mb-1"><strong>Temperature :</strong> <span id="tempValue">24 °C</span></p>
-              <p class="mb-1 "><strong>Alarm set:</strong> <span ><%- typeof alarmValue != 'undefined' ? alarmValue : 80 %>%</span></p>
+              <p class="mb-1 "><strong>Alarm set:</strong> <span id="alarmValue" ><%- typeof alarmValue != 'undefined' ? alarmValue : 80 %>%</span></p>
             </div>
              
             <form method="post"  action="/set_alarm">
@@ -152,16 +152,20 @@ console.log(value);
 
   <script>
     const socket = io();
+
     socket.on("mqtt_data", (msg) => {
-
 console.log("pesan data ");
-console.log(msg);
-
-
-    
+console.log(msg);    
     updateHumidity(msg.data,msg.alarmValue);
-  
-});
+}
+);
+
+
+socket.on("alarm", (msg) => {
+
+document.getElementById("alarmValue").textContent = msg
+}
+);
 
 </script>
 
