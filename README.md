@@ -1,9 +1,22 @@
 # Humidity-Monitoring-with-Iot
-Proyek ini merupakan sistem monitoring kelembapan berbasis IoT menggunakan sensor DHT11 dan mikrokontroler ESP8266 (NodeMcu). Data kelembapan dikirim secara real-time ke server dengan mqtt broker dan dapat diakses melalui website.
+Proyek ini merupakan sistem monitoring kelembapan berbasis IoT menggunakan sensor DHT11 dan mikrokontroler ESP8266 (NodeMcu) yang bisa merubah nilai indikator alarm.
 
 # Fitur
-- Membaca suhu dan kelembapan relatif serta mengolah data yang mendapatkan   dengan sensor DHT11
-- Mengirim data secara real-time menggunakan ESP8266
+- Membaca suhu dan kelembapan relatif serta mengolah data menjadi data kelembapan absolut serta suhu titik embun dengan sensor DHT11
+- Mengirim data secara real-time menggunakan ESP8266 dan juga server Node js yang terhubung mqtt 
 - Visualisasi data pada website dashboard dengan pie chart
+- Dilengkapi dengan sistem keamanan berupa input password sebelum masuk ke halaman visualisasi data
+- Fitur mengganti nilai indikator alarm dengan set alarm value
 
-- Notifikasi (opsional) ketika kelembapan melewati ambang batas
+# Teknologi yang Digunakan
+- Hardware:
+   DHT11
+   ESP8266 (NodeMCU)
+- Software
+  Arduino IDE
+  Node.js
+  MongoDB
+  EJS
+
+
+
