@@ -10,13 +10,13 @@ Proyek ini merupakan sistem monitoring kelembapan berbasis IoT menggunakan senso
 
 ## Teknologi yang Digunakan
 - Hardware:
-   DHT11
-   ESP8266 (NodeMCU)
+   1. DHT11
+   2. ESP8266 (NodeMCU)
 - Software
-  Arduino IDE
-  Node.js
-  MongoDB
-  EJS
+  1. Arduino IDE
+  2. Node.js
+  3. MongoDB
+  4. EJS
 
 
 
