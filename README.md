@@ -18,5 +18,6 @@ Proyek ini merupakan sistem monitoring kelembapan berbasis IoT menggunakan senso
   3. MongoDB
   4. EJS
 
+![WhatsApp Image 2025-09-25 at 12 42 29_53f3571c](https://github.com/user-attachments/assets/fe926808-ea3b-405f-ac67-af213d1c1dbc)
 
 
